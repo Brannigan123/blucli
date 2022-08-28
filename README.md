@@ -9,14 +9,8 @@ A convinient CLI wrapper over bluetoothctl for managing my bluetooth devices.
 2. cargo
 
 ### Setup
-Fetch the sources from github
-> `git clone https://github.com/Brannigan123/blucli.git`
-
-Switch into the source directory
-> `cd blucli` 
-
-Install the module
-> cargo install --path .
+Use cargo to install from github sources
+> `cargo install --git https://github.com/Brannigan123/blucli.git`
 
 ## Running it
 > `blucli`
