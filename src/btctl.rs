@@ -37,6 +37,19 @@ pub fn exec_btctl(arg: Vec<&str>) -> Result<Output, Error> {
     Command::new("bluetoothctl").args(arg).output()
 }
 
+/// It executes the hcitool command with the arguments passed to it.
+/// 
+/// Arguments:
+/// 
+/// * `arg`: Vec<&str>
+/// 
+/// Returns:
+/// 
+/// A Result<Output, Error>
+pub fn exec_hcitool(arg: Vec<&str>) -> Result<Output, Error> {
+    Command::new("hcitool").args(arg).output()
+}
+
 /// It runs `bluetoothctl devices` and parses the output into a vector of `Device` structs
 /// 
 /// Returns:
@@ -54,3 +67,19 @@ pub fn devices() -> Result<Vec<Device>, Error> {
             .collect::<Vec<Device>>()
     })
 }
+
+
+pub fn available_devices() -> Result<Vec<Device>, Error> {
+    exec_hcitool(vec!["scan"]).map(|output| {
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .skip(1)
+            .map(|line| line.split_whitespace().collect::<Vec<&str>>())
+            .map(|splits| Device {
+                alias: splits[1].to_string(),
+                mac_address: splits[0].to_string(),
+            })
+            .collect::<Vec<Device>>()
+    })
+}
+

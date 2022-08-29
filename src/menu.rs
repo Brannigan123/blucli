@@ -1,4 +1,4 @@
-use crate::btctl::{devices, exec_btctl, Device};
+use crate::btctl::{available_devices, devices, exec_btctl, Device};
 use colored::Colorize;
 use inquire::formatter::{MultiOptionFormatter, OptionFormatter};
 use inquire::{list_option::ListOption, validator::Validation};
@@ -9,7 +9,9 @@ use std::fmt;
 /// `Exit`.
 #[derive(Debug)]
 pub enum Stage {
+    StageSelection,
     DeviceSelection,
+    AvailableDeviceSelection,
     ActionSelection,
     Exit,
 }
@@ -18,9 +20,11 @@ pub enum Stage {
 impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Stage::DeviceSelection => write!(f, "go to device selection"),
-            Stage::ActionSelection => write!(f, "perform actions on selected devices"),
-            Stage::Exit => write!(f, "exit"),
+            Stage::StageSelection => write!(f, "Choose what to do next"),
+            Stage::DeviceSelection => write!(f, "Select Devices"),
+            Stage::AvailableDeviceSelection => write!(f, "Select available device(s)"),
+            Stage::ActionSelection => write!(f, "Perform actions on selected device(s)"),
+            Stage::Exit => write!(f, "Exit"),
         }
     }
 }
@@ -32,22 +36,30 @@ impl fmt::Display for Stage {
 /// Returns:
 ///
 /// A vector of devices
-fn device_selection() -> Vec<Device> {
-    let device_options = devices().expect("Failed to get device list using bluetoothctl!");
-    let formatter: MultiOptionFormatter<Device> =
-        &|opts| format!("Selected {} device(s)", opts.len());
-    let validator = |opts: &[ListOption<&Device>]| {
-        Ok(if opts.len() <= 0 {
-            Validation::Invalid("Select at least 1 device!".into())
-        } else {
-            Validation::Valid
-        })
+fn device_selection(get_available: bool) -> Vec<Device> {
+    let device_options = if get_available {
+        available_devices().expect("Failed to get available device using hcitool!")
+    } else {
+        devices().expect("Failed to get device list using bluetoothctl!")
     };
-    MultiSelect::new("Select device(s): ", device_options)
-        .with_validator(validator)
-        .with_formatter(formatter)
-        .prompt()
-        .expect("Failed to capture selection(s)")
+    if device_options.is_empty() {
+        device_options
+    } else {
+        let formatter: MultiOptionFormatter<Device> =
+            &|opts| format!("Selected {} device(s)", opts.len());
+        let validator = |opts: &[ListOption<&Device>]| {
+            Ok(if opts.len() <= 0 {
+                Validation::Invalid("Select at least 1 device!".into())
+            } else {
+                Validation::Valid
+            })
+        };
+        MultiSelect::new("Select device(s): ", device_options)
+            .with_validator(validator)
+            .with_formatter(formatter)
+            .prompt()
+            .expect("Failed to capture selection(s)")
+    }
 }
 
 /// `actions_selection` is a function that takes a `device_count` as an argument and returns a `String`
@@ -84,9 +96,22 @@ fn actions_selection(device_count: usize) -> String {
 /// Returns:
 ///
 /// user selected Stage to executed next
-fn select_next_stage() -> Stage {
+fn select_next_stage(device_count: usize) -> Stage {
     let formatter: OptionFormatter<Stage> = &|a| format!("Chose to {a}");
-    let actions = vec![Stage::DeviceSelection, Stage::ActionSelection, Stage::Exit];
+    let actions = if device_count > 0 {
+        vec![
+            Stage::DeviceSelection,
+            Stage::ActionSelection,
+            Stage::AvailableDeviceSelection,
+            Stage::Exit,
+        ]
+    } else {
+        vec![
+            Stage::DeviceSelection,
+            Stage::AvailableDeviceSelection,
+            Stage::Exit,
+        ]
+    };
     Select::new("What would you like to do next?", actions)
         .with_formatter(formatter)
         .prompt()
@@ -95,19 +120,19 @@ fn select_next_stage() -> Stage {
 
 /// It runs a loop that switches between two stages: device selection and action selection
 pub fn run() {
-    let mut stage = Stage::DeviceSelection;
+    let mut stage = Stage::StageSelection;
     let mut selections = Vec::new();
-    let mut device_count = 0;
-    exec_btctl(vec!["power", "on"]).expect("Failed to power on bluetoothctl");
+    exec_btctl(vec!["power", "on"]).expect("Failed to power on via bluetoothctl");
     loop {
         match stage {
             Stage::DeviceSelection => {
-                selections = device_selection();
-                device_count = selections.len();
-                stage = Stage::ActionSelection;
+                selections = device_selection(false);
+            }
+            Stage::AvailableDeviceSelection => {
+                selections = device_selection(true);
             }
             Stage::ActionSelection => {
-                let action = actions_selection(device_count);
+                let action = actions_selection(selections.len());
                 for device in &selections {
                     let name = &device.alias;
                     let mac_address = &device.mac_address;
@@ -124,9 +149,13 @@ pub fn run() {
                         }
                     }
                 }
-                stage = select_next_stage();
+            }
+            Stage::StageSelection => {
+                stage = select_next_stage(selections.len());
+                continue;
             }
             Stage::Exit => break,
         }
+        stage = Stage::StageSelection
     }
 }

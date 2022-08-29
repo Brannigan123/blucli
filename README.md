@@ -2,6 +2,8 @@
 
 A convinient CLI wrapper over bluetoothctl for managing my bluetooth devices.
 
+hcitool from bluez, is used to scan for available devices.
+
 ## Running it
 > `blucli`
 
