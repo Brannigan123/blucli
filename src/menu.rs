@@ -1,4 +1,5 @@
 use crate::btctl::{devices, exec_btctl, Device};
+use colored::Colorize;
 use inquire::formatter::{MultiOptionFormatter, OptionFormatter};
 use inquire::{list_option::ListOption, validator::Validation};
 use inquire::{MultiSelect, Select};
@@ -112,8 +113,15 @@ pub fn run() {
                     let mac_address = &device.mac_address;
                     let res = exec_btctl(vec![&action, &mac_address]);
                     match res {
-                        Ok(output) => println!("\n{}", String::from_utf8_lossy(&output.stdout)),
-                        Err(_) => println!("Failed to {action} {name}"),
+                        Ok(output) => println!(
+                            "\n{}",
+                            format!("{}", String::from_utf8_lossy(&output.stdout))
+                                .purple()
+                                .bold()
+                        ),
+                        Err(_) => {
+                            println!("{}", format!("Failed to {} {}", action, name).red().bold())
+                        }
                     }
                 }
                 stage = select_next_stage();
