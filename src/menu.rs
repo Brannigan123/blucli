@@ -5,8 +5,8 @@ use inquire::{list_option::ListOption, validator::Validation};
 use inquire::{MultiSelect, Select};
 use std::fmt;
 
-/// Creating an enum called `Stage` with three variants: `DeviceSelection`, `ActionSelection`, and
-/// `Exit`.
+/// Creating an enum called `Stage` with five variants: `StageSelection`, `DeviceSelection`,
+/// `AvailableDeviceSelection`, `ActionSelection`, and `Exit`.
 #[derive(Debug)]
 pub enum Stage {
     StageSelection,
@@ -118,7 +118,8 @@ fn select_next_stage(device_count: usize) -> Stage {
         .expect("Failed to capture selection(s)")
 }
 
-/// It runs a loop that switches between two stages: device selection and action selection
+/// It runs a loop that switches between the various stages of device selection and action selection
+/// and whether to exit
 pub fn run() {
     let mut stage = Stage::StageSelection;
     let mut selections = Vec::new();
