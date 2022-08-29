@@ -21,8 +21,8 @@ impl fmt::Display for Stage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Stage::StageSelection => write!(f, "Choose what to do next"),
-            Stage::DeviceSelection => write!(f, "Select Devices"),
-            Stage::AvailableDeviceSelection => write!(f, "Select available device(s)"),
+            Stage::DeviceSelection => write!(f, "Select device(s)"),
+            Stage::AvailableDeviceSelection => write!(f, "Find available device(s)"),
             Stage::ActionSelection => write!(f, "Perform actions on selected device(s)"),
             Stage::Exit => write!(f, "Exit"),
         }
@@ -101,8 +101,8 @@ fn select_next_stage(device_count: usize) -> Stage {
     let actions = if device_count > 0 {
         vec![
             Stage::DeviceSelection,
-            Stage::ActionSelection,
             Stage::AvailableDeviceSelection,
+            Stage::ActionSelection,
             Stage::Exit,
         ]
     } else {
