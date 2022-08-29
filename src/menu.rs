@@ -125,12 +125,8 @@ pub fn run() {
     exec_btctl(vec!["power", "on"]).expect("Failed to power on via bluetoothctl");
     loop {
         match stage {
-            Stage::DeviceSelection => {
-                selections = device_selection(false);
-            }
-            Stage::AvailableDeviceSelection => {
-                selections = device_selection(true);
-            }
+            Stage::DeviceSelection => selections = device_selection(false),
+            Stage::AvailableDeviceSelection => selections = device_selection(true),
             Stage::ActionSelection => {
                 let action = actions_selection(selections.len());
                 for device in &selections {
