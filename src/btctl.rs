@@ -57,7 +57,11 @@ pub fn devices() -> Result<Vec<Device>, Error> {
     exec_btctl(vec!["devices"]).map(|output| {
         String::from_utf8_lossy(&output.stdout)
             .lines()
-            .map(|line| line.split_whitespace().collect::<Vec<&str>>())
+            .map(|line| {
+                line.trim()
+                    .splitn(3, char::is_whitespace)
+                    .collect::<Vec<&str>>()
+            })
             .map(|splits| Device {
                 alias: splits[2].to_string(),
                 mac_address: splits[1].to_string(),
@@ -76,7 +80,11 @@ pub fn available_devices() -> Result<Vec<Device>, Error> {
         String::from_utf8_lossy(&output.stdout)
             .lines()
             .skip(1)
-            .map(|line| line.split_whitespace().collect::<Vec<&str>>())
+            .map(|line| {
+                line.trim()
+                    .splitn(2, char::is_whitespace)
+                    .collect::<Vec<&str>>()
+            })
             .map(|splits| Device {
                 alias: splits[1].to_string(),
                 mac_address: splits[0].to_string(),
